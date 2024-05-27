@@ -1,0 +1,31 @@
+module Pedals:
+
+	%interface declarations
+	%input QuickAccel QuickDecel, Set, Resume, Off, On;
+	input Accel: float;
+	input Brake: float;
+	input Speed: float;
+	
+
+	output CruiseSpeed: float;
+	output ThrottleCmd: float;
+
+	constant PedalsMin = 3.0f : float;
+
+	
+	signal AccelPedal in
+    
+	loop 
+        trap Accel, Brake in 
+		if (pre(?Accel) > PedalsMin) then 
+			emit AccelPedal;
+        end if;
+        pause;	
+        end trap
+	end loop
+    end signal
+	
+		
+end module
+
+
