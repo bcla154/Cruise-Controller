@@ -1,0 +1,69 @@
+module Pedals:
+
+	%interface declarations
+    input On : boolean;
+    input Off : boolean;
+    input Resume : boolean;
+    input Set : boolean;
+    input QuickDecel : boolean;
+    input QuickAccel : boolean;
+
+	input Accel: float;
+	input Brake: float;
+	input Speed: float;
+	
+
+	output CruiseSpeed: float;
+	output ThrottleCmd: float;
+    output CruiseState: integer;
+
+	constant PedalsMin = 3.0f : float;
+    constant SpeedMax = 150.0f : float;
+    constant SpeedMin = 30.0f : float;
+
+	
+	signal AccelPedal in
+    signal BrakePedal in 
+    
+	loop
+        if (pre(?Accel) > PedalsMin) then 
+            emit AccelPedal;
+        end if;
+        if not  (pre(?Accel) > PedalsMin) and (pre(?Brake) > PedalsMin) then 
+            emit BrakePedal;
+        end if;
+        pause	
+	end loop
+    
+    ||
+
+    % state control
+    % 00 = OFF 
+    % 01 = ON 
+    % 02 = STDBY 
+    % 03 = DISABLE
+    loop 
+        if (?On) then
+            emit CruiseState(1)  
+            
+        elsif (?Off) then 
+            emit CruiseState(0)  
+        else
+            emit CruiseState(0)
+        end if;
+        pause
+
+        if (?On) and (?BrakePedal) then 
+            emit CruiseState(2)
+        elsif (?On) and (?AccelPedal) then
+            if (?Accel) >= (SpeedMin) and not (?Accel) > (SpeedMax) then 
+                emit CruiseState()
+    end loop 
+
+
+    end signal
+    end signal
+
+end module
+
+
