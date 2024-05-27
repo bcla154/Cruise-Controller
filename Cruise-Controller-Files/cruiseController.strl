@@ -1,31 +1,97 @@
 module Pedals:
 
 	%interface declarations
-	%input QuickAccel QuickDecel, Set, Resume, Off, On;
+    input On : boolean;
+    input Off : boolean;
+    input Resume : boolean;
+    input Set : boolean;
+    input QuickDecel : boolean;
+    input QuickAccel : boolean;
+
 	input Accel: float;
 	input Brake: float;
 	input Speed: float;
-	
+
 
 	output CruiseSpeed: float;
 	output ThrottleCmd: float;
+    output CruiseState: integer;
 
 	constant PedalsMin = 3.0f : float;
-
+    constant SpeedMax = 150.0f : float;
+    constant SpeedMin = 30.0f : float;
 	
 	signal AccelPedal in
+    signal BrakePedal in 
     
-	loop 
-        trap Accel, Brake in 
-		if (pre(?Accel) > PedalsMin) then 
-			emit AccelPedal;
+	loop
+        if (pre(?Accel) > PedalsMin) then 
+            emit AccelPedal;
+        end if;
+        if not  (pre(?Accel) > PedalsMin) and (pre(?Brake) > PedalsMin) then 
+            emit BrakePedal;
         end if;
         pause;	
-        end trap
-	end loop
+	end loop;
+    
+    ||
+
+    % state control 
+    % 00 = OFF 
+    % 01 = ON 
+    % 02 = STDBY 
+    % 03 = DISABLE
+
+    loop 
+        if (?On) then
+            emit CruiseState(1); 
+            
+        elsif (?Off) then 
+            emit CruiseState(0);
+
+        else
+            emit CruiseState(0); 
+
+        end if; 
+        pause;
+
+        if (?On) and (?BrakePedal) then %don't need on?
+            emit CruiseState(2);
+        elsif (?On) and (?AccelPedal) then
+            if (?Accel) >= (SpeedMin) and not (?Accel) > (SpeedMax) then 
+                emit CruiseState(3);
+        elsif(?Off) then   
+            emit CruisState(0);
+        else 
+            emit CruiseState(1);
+
+        end if;
+        pause;
+
+
+        if (?Resume) and not (?AccelPedal) then 
+            if (?Accel) <= (SpeedMin) and not (?Accel) < (SpeedMax) then 
+                emit CruiseState(1);
+        elsif (?Resume) and (?Accel) then 
+            if (?Accel) >= (SpeedMin) and not (?Accel) > (SpeedMax) then 
+                emit CruiseState(3);
+        else 
+            emit CruiseState(2);  
+
+        end if;
+        pause;
+
+        if not (?AccelPedal) then 
+            if (?Accel) <= (SpeedMin) and not (?Accel) < (SpeedMax) then 
+
+
+
+
+    end loop;   
     end signal
-	
-		
+    end signal
+
+
 end module
 
 
