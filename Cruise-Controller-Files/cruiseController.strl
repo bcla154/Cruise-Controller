@@ -25,6 +25,8 @@ module Pedals:
     constant ThrottleSatMax = 45.0f : float;
     constant zero = 0.0f : float;
 
+    
+
 	
 	output AccelPedal: boolean;
     output BrakePedal: boolean; 
@@ -52,7 +54,7 @@ module Pedals:
     % 01 = ON 
     % 02 = STDBY 
     % 03 = DISABLE
-
+    
 
     loop 
         if (?On) and not ((?AccelPedal) or (?BrakePedal)) then
@@ -70,7 +72,7 @@ module Pedals:
             end if;
 
         elsif (?Off) then 
-            emit CruiseState(0)
+            emit CruiseState(0);
 
         elsif (?On) and ((?BrakePedal) or (?AccelPedal)) then 
             emit CruiseState(2)
@@ -107,47 +109,60 @@ module Pedals:
 
     ||
 
-    % car driving control
-    %loop
-
-        %if((?CruiseState) = 0) then 
-
-        %elsif((?CruiseState) = 1) then 
-
-
-    %end loop
-
-    %cruise speed management
-
+    % cruise speed management 
+    var value := 0.0f : float in
     loop
-        if not ((?CruiseState) = 0) then
-            if (?On) then 
-                emit CruiseSpeed(?Speed);
-                pause;
-            elsif not (?On) then
-                    if(?Set)
-                        emit CruiseSpeed(?Speed);
-                        pause;
-                    end if;
-                    if(?QuickAccel) and not (?Set) and not (?QuickDecel) then 
-                        if (?CruiseSpeed) < (SpeedMax) then 
-                            emit CruiseSpeed(zero);
-                        else 
-                            emit CruiseSpeed(SpeedMax);
-                        end if;
-                    elsif(?QuickDecel) and (?QuickAccel) and not (?Set) then 
-                        if (?CruiseSpeed) > SpeedMin then 
-                            emit CruiseSpeed(pre(?CruiseSpeed) - SpeedInc);
-                        else 
-                            emit CruiseSpeed(SpeedMin);
-                        end if; 
-                    end if;
+       
+
+        if not (?CruiseState = 0) then 
+            if (?On) and pre(?CruiseState) = 0 then 
+                if (?Speed < SpeedMin) then 
+                    emit CruiseSpeed(SpeedMin);
+                    
+                elsif (?Speed > SpeedMax) then 
+                    emit CruiseSpeed(SpeedMax);
+                   
+                else 
+                    emit CruiseSpeed(?Speed);
+                    
+                end if;
+
+            elsif (?Set) then 
+                if (?Speed >= SpeedMin) and (?Speed <= SpeedMax) then 
+                    emit CruiseSpeed(?Speed);
+                elsif (?Speed < SpeedMin) then 
+                    emit CruiseSpeed(SpeedMin);
+                elsif (?Speed > SpeedMax) then 
+                    emit CruiseSpeed(SpeedMax);
+                else 
+                    emit CruiseSpeed(?CruiseSpeed);
+                end if;
+          
+                    
+            elsif (?QuickAccel) then 
+                value := pre(?CruiseSpeed) + SpeedInc; 
+                if (value <= SpeedMax) then
+                    emit CruiseSpeed(value);
+                end if;
+            elsif (?QuickDecel) then 
+                value := pre(?CruiseSpeed) - SpeedInc; 
+                if ((value) >= SpeedMin) then 
+                    emit CruiseSpeed(value);
+                else 
+                    emit CruiseSpeed(?CruiseSpeed);
+                end if;
+            else 
+                emit CruiseSpeed(?CruiseSpeed);
             end if;
+        else 
+            emit CruiseSpeed(?CruiseSpeed);
         end if;
         pause;
     end loop
-
-%(?CruiseSpeed) + SpeedInc
+    end var
+    
 
 end module
+
+
 
