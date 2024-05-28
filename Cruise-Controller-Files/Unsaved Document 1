@@ -1,0 +1,41 @@
+ loop 
+        if (?On) then
+            emit CruiseState(1); 
+            
+        elsif (?Off) then 
+            emit CruiseState(0);
+
+        else
+            emit CruiseState(0); 
+
+        end if; 
+        pause;
+
+        if (?On) and (?BrakePedal) then %don't need on?
+            emit CruiseState(2);
+        elsif (?On) and (?AccelPedal) then
+            if (?Accel) >= (SpeedMin) and not (?Accel) > (SpeedMax) then 
+                emit CruiseState(3);
+        elsif(?Off) then   
+            emit CruisState(0);
+        else 
+            emit CruiseState(1);
+
+        end if;
+        pause;
+
+
+        if (?Resume) and not (?AccelPedal) then 
+            if (?Accel) <= (SpeedMin) and not (?Accel) < (SpeedMax) then 
+                emit CruiseState(1);
+        elsif (?Resume) and (?Accel) then 
+            if (?Accel) >= (SpeedMin) and not (?Accel) > (SpeedMax) then 
+                emit CruiseState(3);
+        else 
+            emit CruiseState(2);  
+
+        end if;
+        pause;
+
+        if not (?AccelPedal) then 
+            if (?Accel) <= (SpeedMin) and not (?Accel) < (SpeedMax) then
