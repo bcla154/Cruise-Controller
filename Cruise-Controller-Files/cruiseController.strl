@@ -61,7 +61,10 @@ module Pedals:
     
 
     loop 
-        if (?On) and not ((?AccelPedal) or (?BrakePedal)) then
+
+        if (?Off) then 
+            emit CruiseState(0);
+        elsif (?On) and not ((?AccelPedal) or (?BrakePedal)) then
         % Accelerating and within speed limit 
             if (?Speed) >= (SpeedMin) and not (?Speed) > (SpeedMax) then 
                 emit CruiseState(1)
@@ -74,9 +77,6 @@ module Pedals:
             else 
                 emit CruiseState(1)
             end if;
-
-        elsif (?Off) then 
-            emit CruiseState(0);
 
         elsif (?On) and ((?BrakePedal) or (?AccelPedal)) then 
             emit CruiseState(2)
@@ -172,11 +172,7 @@ module Pedals:
                 else 
                     emit CruiseSpeed(?CruiseSpeed);
                 end if;
-            else 
-                emit CruiseSpeed(?CruiseSpeed);
             end if;
-        else 
-            emit CruiseSpeed(?CruiseSpeed);
         end if;
         pause;
     end loop
