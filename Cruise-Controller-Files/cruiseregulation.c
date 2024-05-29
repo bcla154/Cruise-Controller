@@ -1,4 +1,8 @@
+#include "cruiseController.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 /*
 DESCRIPTION: Saturate the throttle command to limit the acceleration.
@@ -30,7 +34,7 @@ PARAMETERS: isGoingOn - true if the cruise control has just gone into the ON sta
             saturate - true if saturated, false otherwise
 RETURNS: throttle output (ThrottleCmd)
 */
-float regulateThrottle(bool isGoingOn, float cruiseSpeed, float vehicleSpeed)
+float regulateThrottle(int isGoingOn, float cruiseSpeed, float vehicleSpeed)
 {
 	static const float KP = 8.113;
 	static const float KI = 0.5;
