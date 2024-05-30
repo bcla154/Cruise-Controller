@@ -27,11 +27,18 @@ module Pedals:
     constant ThrottleSatMax = 45.0f : float;
     constant zero = 0.0f : float;
 
-    
 
 	
 	output AccelPedal: boolean;
     output BrakePedal: boolean; 
+
+    emit On(true);
+    emit Off(false);
+
+    emit Accel(zero);
+    emit Brake(zero);
+    emit Speed(zero);
+    
 
     
     
