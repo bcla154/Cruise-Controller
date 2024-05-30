@@ -3,12 +3,12 @@ module Pedals:
     function regulateThrottle(boolean, float, float) : float;
 
 	%interface declarations
-    input On : boolean;
-    input Off : boolean;
-    input Resume : boolean;
-    input Set : boolean;
-    input QuickDecel : boolean;
-    input QuickAccel : boolean;
+    input On;
+    input Off;
+    input Resume;
+    input Set;
+    input QuickDecel;
+    input QuickAccel;
 
 	input Accel: float;
 	input Brake: float;
@@ -30,10 +30,9 @@ module Pedals:
 	output AccelPedal: boolean;
     output BrakePedal: boolean; 
 
+    emit CruiseState(0);
+    await On;
 
-    %emit Accel(zero);
-    %emit CruiseState(0);
-    %emit Speed(zero);
 
     
     
@@ -48,11 +47,11 @@ module Pedals:
         else 
             emit BrakePedal(false); 
         end if;
-        pause	
+        await tick; 	
 	end loop
    
-    
     ||
+    
 
     % state control
 
@@ -60,66 +59,54 @@ module Pedals:
     % 01 = ON 
     % 02 = STDBY 
     % 03 = DISABLE
+
+    await On;
     
     loop 
         present 
-            case (Off)  do 
+            case (Off and not On) do 
                 emit CruiseState(0);
 
             case (On) do 
-                present 
-                    case (pre(BrakePedal)) do 
+               
+                    if (pre(?BrakePedal) and not (pre(?AccelPedal))) then 
                         emit CruiseState(2);
+                        
+                    elsif (((pre(?AccelPedal)) and not pre(?BrakePedal)) or (pre(?Speed) < (SpeedMin) or pre(?Speed) > (SpeedMax))) then                       
+                            emit CruiseState(3);      
 
-                    case ((AccelPedal) and not (BrakePedal)) do 
-                        if (?Speed) >= (SpeedMin) and not (?Speed) > (SpeedMax) then 
-                            emit CruiseState(1);
-        
-                        elsif (?Speed) > (SpeedMax) then 
-                            emit CruiseState(3);
-                
-                        elsif (?Speed) < (SpeedMin) then 
-                            emit CruiseState(3);
-                        else 
-                            emit CruiseState(1);
-                        end if;
-
+                    elsif (not pre(?BrakePedal) and not (pre(?AccelPedal))) then
+                        emit CruiseState(1);
                     else 
-                        emit CruiseState(1)
-                end present;
+                        emit CruiseState(1);
+                    end if;
+                
 
             case (Resume) do 
-                if (((?CruiseState) = 2)) then 
-                    if ((?Speed) >= (SpeedMin) and not (?Speed) > (SpeedMax)) and not (?AccelPedal) then 
+                if ((pre(?CruiseState) = 2)) then 
+                    if (((?Speed) >= (SpeedMin) and not (?Speed) > (SpeedMax)) and not pre(?AccelPedal)) then 
                         emit CruiseState(1);
 
-                    elsif ((?Speed) < (SpeedMin) or (?Speed) > (SpeedMax)) or (?AccelPedal) then 
+                    elsif ((?Speed) < (SpeedMin) or (?Speed) > (SpeedMax)) or pre(?AccelPedal) then 
                         emit CruiseState(3);
                     else
                         emit CruiseState(2);
                     end if;
                 else 
                     emit CruiseState(pre(?CruiseState));
-            end if;
+                end if;
 
-            %await tick;
-            case (AccelPedal) do 
-                if (?CruiseState = 1) then 
-                    if  (?Speed >= zero) and (((?Speed) < SpeedMin) or ((?Speed) > SpeedMax)) then 
-                        emit CruiseState(3);
-                    end if;
-                else 
-                    emit CruiseState(pre(?CruiseState));
+            case (pre(AccelPedal)) do 
+                if pre(?CruiseState) = 1 and (((?Speed) < SpeedMin) or ((?Speed) > SpeedMax)) then 
+                    emit CruiseState(3);
                 end if;            
-            case (not AccelPedal) do 
-                if (?CruiseState = 3) and (?Speed >= zero) then 
+            case (not pre(AccelPedal)) do 
+                if pre(?CruiseState) = 3 and (?Speed >= zero) then 
                     if ((?Speed > SpeedMin) and (?Speed <= SpeedMax)) then 
                         emit CruiseState(1);
                     else 
                         emit CruiseState(3);
-                    end if;  
-                else 
-                    emit CruiseState(pre(?CruiseState));
+                    end if;   
                 end if;
             else 
                 emit CruiseState(pre(?CruiseState));
@@ -130,12 +117,14 @@ module Pedals:
 
     ||
 
+    await On; 
+
     
     % car driving control
     
     var throttle := 0.0f : float in
     loop
-        if((?CruiseState) = 1) then 
+        if(pre(?CruiseState) = 1) then 
             if ((pre(?CruiseState)= 0)) then 
             throttle := (regulateThrottle(true, ?CruiseSpeed, ?Speed));
                 emit ThrottleCmd(throttle);
@@ -145,7 +134,7 @@ module Pedals:
             else
                 emit ThrottleCmd(?Accel);
             end if;
-        elsif((?CruiseState) = 0) and (?Accel) >= zero then 
+        elsif(pre(?CruiseState) = 0) and (?Accel) >= zero then 
             emit ThrottleCmd(?Accel);
         else 
             emit ThrottleCmd(?Accel);
@@ -157,49 +146,39 @@ module Pedals:
 
     ||
 
+    await On; 
+
     % cruise speed management 
     var value := 0.0f : float in
     loop
-        if not (?CruiseState = 0) then  
-            if ((?On) or (?Set)) and pre(?CruiseState) = 0 then 
-                 if (?Speed < SpeedMin) then 
-                    emit CruiseSpeed(SpeedMin);
-                    
-                elsif (?Speed > SpeedMax) then 
-                    emit CruiseSpeed(SpeedMax);
-                   
-                else 
+        present 
+            case On do 
+                if (pre(?CruiseState) = 0) then 
                     emit CruiseSpeed(?Speed);
-                    
+                else  
+                    emit CruiseSpeed(pre(?CruiseSpeed));
+                end if;
+            case Set do 
+                emit CruiseSpeed(?Speed);
+            case QuickAccel do 
+                if ((?Speed + SpeedInc) < SpeedMax) then 
+                    value := ?Speed + SpeedInc;
+                    emit CruiseSpeed(value);
+                else
+                    emit CruiseSpeed(SpeedMax);
                 end if;
 
-            elsif (?Set) then 
-                if (?Speed < SpeedMin) then 
+            case QuickDecel do 
+                if (((?Speed - SpeedInc) > SpeedMin)) then 
+                    value := ?Speed - SpeedInc;
+                    emit CruiseSpeed(value);
+                else
                     emit CruiseSpeed(SpeedMin);
-                elsif (?Speed > SpeedMax) then 
-                    emit CruiseSpeed(SpeedMax);
-                else 
-                    emit CruiseSpeed(?Speed);
                 end if;
-        
-            elsif (?QuickAccel) then 
-                value := pre(?CruiseSpeed) + SpeedInc; 
-                if (value <= SpeedMax) then
-                    emit CruiseSpeed(value);
-                else 
-                    emit CruiseSpeed(?CruiseSpeed);
-                end if;
-
-            elsif (?QuickDecel) then 
-                value := pre(?CruiseSpeed) - SpeedInc; 
-                if ((value) >= SpeedMin) then 
-                    emit CruiseSpeed(value);
-                else 
-                    emit CruiseSpeed(?CruiseSpeed);
-                end if;
-            end if;
-        end if;
-        pause;
+            else 
+                emit CruiseSpeed(zero);
+        end present;
+        await tick;
     end loop
     end var
 end module
