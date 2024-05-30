@@ -30,7 +30,6 @@ module Pedals:
 	output AccelPedal: boolean;
     output BrakePedal: boolean; 
 
-    emit CruiseState(0);
     await On;
 
 
@@ -95,21 +94,18 @@ module Pedals:
                 else 
                     emit CruiseState(pre(?CruiseState));
                 end if;
-
-            case (pre(AccelPedal)) do 
-                if pre(?CruiseState) = 1 and (((?Speed) < SpeedMin) or ((?Speed) > SpeedMax)) then 
-                    emit CruiseState(3);
-                end if;            
-            case (not pre(AccelPedal)) do 
-                if pre(?CruiseState) = 3 and (?Speed >= zero) then 
-                    if ((?Speed > SpeedMin) and (?Speed <= SpeedMax)) then 
-                        emit CruiseState(1);
-                    else 
-                        emit CruiseState(3);
-                    end if;   
-                end if;
             else 
-                emit CruiseState(pre(?CruiseState));
+                if (pre(?BrakePedal) and not (pre(?AccelPedal))) then 
+                    emit CruiseState(2);
+                        
+                elsif (((pre(?AccelPedal)) and not pre(?BrakePedal)) or (pre(?Speed) < (SpeedMin) or pre(?Speed) > (SpeedMax))) then                       
+                    emit CruiseState(3);      
+
+                elsif (not pre(?BrakePedal) and not (pre(?AccelPedal))) then
+                        emit CruiseState(1);
+                else 
+                    emit CruiseState(pre(?CruiseState));
+                end if;
         end present;
         pause;
     end loop 
