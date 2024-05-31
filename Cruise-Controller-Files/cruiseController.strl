@@ -85,17 +85,24 @@ module Pedals:
                     emit CruiseState(pre(?CruiseState));
                 end if;
             else 
-                if (pre(?BrakePedal) and not (pre(?AccelPedal))) then 
-                    emit CruiseState(2);
-                        
-                elsif (((pre(?AccelPedal)) and not pre(?BrakePedal)) or (pre(?Speed) < (SpeedMin) or pre(?Speed) > (SpeedMax))) then                       
-                    emit CruiseState(3);      
 
-                elsif (not pre(?BrakePedal) and not (pre(?AccelPedal))) then
-                        emit CruiseState(1);
-                else 
-                    emit CruiseState(pre(?CruiseState));
+                if not (pre(?CruiseState) = 0) then 
+                    if (pre(?BrakePedal) and not (pre(?AccelPedal))) then 
+                        emit CruiseState(2);
+                                
+                    elsif (((pre(?AccelPedal)) and not pre(?BrakePedal)) or (pre(?Speed) < (SpeedMin) or pre(?Speed) > (SpeedMax))) then                       
+                        emit CruiseState(3);      
+
+                    elsif (not pre(?BrakePedal) and not (pre(?AccelPedal))) then
+                            emit CruiseState(1);
+                    else 
+                        emit CruiseState(pre(?CruiseState));
+                    end if;
+                else
+                    emit CruiseState(0);
                 end if;
+            
+            
         end present;
         pause;
     end loop 
@@ -140,29 +147,42 @@ module Pedals:
         present 
             case On do 
                 if (pre(?CruiseState) = 0) then 
-                    emit CruiseSpeed(?Speed);
+                    if ((?Speed) < SpeedMin) then
+                        emit CruiseSpeed(SpeedMin);
+                    elsif ((?Speed) > SpeedMax) then
+                        emit CruiseSpeed(SpeedMax);
+                    else
+                        emit CruiseSpeed(?Speed);
+                    end if
                 else  
                     emit CruiseSpeed(pre(?CruiseSpeed));
                 end if;
             case Set do 
-                emit CruiseSpeed(?Speed);
+                if ((?Speed) < SpeedMin) then
+                    emit CruiseSpeed(SpeedMin);
+                elsif ((?Speed) > SpeedMax) then
+                    emit CruiseSpeed(SpeedMax);
+                else
+                    emit CruiseSpeed(?Speed);
+                end if
+
             case QuickAccel do 
-                if ((?Speed + SpeedInc) < SpeedMax) then 
-                    value := ?Speed + SpeedInc;
+                if ((pre(?CruiseSpeed) + SpeedInc) < SpeedMax) then 
+                    value := pre(?CruiseSpeed) + SpeedInc;
                     emit CruiseSpeed(value);
                 else
                     emit CruiseSpeed(SpeedMax);
                 end if;
 
             case QuickDecel do 
-                if (((?Speed - SpeedInc) > SpeedMin)) then 
-                    value := ?Speed - SpeedInc;
+                if ((pre(?CruiseSpeed) - SpeedInc) > SpeedMin) then 
+                    value := pre(?CruiseSpeed) - SpeedInc;
                     emit CruiseSpeed(value);
                 else
                     emit CruiseSpeed(SpeedMin);
                 end if;
             else 
-                emit CruiseSpeed(zero);
+                emit CruiseSpeed(pre(?CruiseSpeed));
         end present;
         await tick;
     end loop
