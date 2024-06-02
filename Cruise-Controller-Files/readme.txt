@@ -3,18 +3,6 @@ Bailey Clague & Marianne Healey
 
 The project involves the implementation of a cruise control system in the synchronous programming language of Esterel.
 
-
-Installation:
-1. Clone the repository: https://github.com/bcla154/723-Cruise-Controller.git
-
-Running the project:
-2. Navigate to the project directory 
-
-3. Run the project:
-make cruiseController.xes
-./cruiseController.xes
-
-
 Key features:
 
 Four states: ON, OFF, STNDBY, DISABLE
@@ -43,8 +31,18 @@ Outputs:
 - Cruise Speed (CruiseSpeed) - float
 - Throttle command (ThrottleCmd) - float
 
-Contact:
-If you have any questions or suggestions, please feel free to contact us:
+INSTRUCTIONS TO RUN:
 
-Bailey Clague: bcla154@aucklandun.ac.nz
-Marianne Healey: mhea373@aucklanduni.ac.nz
+Open a terminal in the 'Cruise-Control-Files' directory 
+
+Clean and build both the .xes and .xev by entering the following commands
+
+For the .xes:
+
+make clean cruiseController.xes
+./cruiseController.xes
+
+The GUI where inputs and outputs can be displayed should open.
+Change the font to huge to get a good window size.
+Select  
+
