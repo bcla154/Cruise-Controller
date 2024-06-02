@@ -92,22 +92,21 @@ module Pedals:
                 end if;
             else 
 
-                if not (pre(?CruiseState) = OffState) then 
-                    if (pre(?BrakePedal) and not (pre(?AccelPedal))) then 
+                if not (pre(?CruiseState) = OffState) and not (pre(?CruiseState) = StandbyState) then 
+                    if (pre(?BrakePedal) and not (pre(?AccelPedal)) and not pre(?CruiseState) = DisableState) then 
                         emit CruiseState(StandbyState);
                                 
                     elsif (((pre(?AccelPedal)) and not pre(?BrakePedal)) or (pre(?Speed) < (SpeedMin) or pre(?Speed) > (SpeedMax))) then                       
                         emit CruiseState(DisableState);      
 
-                    elsif (not pre(?BrakePedal) and not (pre(?AccelPedal))) then
+                    elsif (not pre(?BrakePedal) and not (pre(?AccelPedal)) and (((?Speed) >= (SpeedMin) and not (?Speed) > (SpeedMax)))) then
                             emit CruiseState(OnState);
                     else 
                         emit CruiseState(pre(?CruiseState));
                     end if;
                 else
-                    emit CruiseState(OffState);
+                    emit CruiseState(pre(?CruiseState));
                 end if;
-            
             
         end present;
         pause;
