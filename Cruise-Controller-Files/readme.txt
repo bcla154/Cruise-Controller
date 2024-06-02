@@ -44,5 +44,14 @@ make clean cruiseController.xes
 
 The GUI where inputs and outputs can be displayed should open.
 Change the font to huge to get a good window size.
-Select  
+Select the command panel and select "Keep Inputs"
+Modify input values as needed and click tick when updating of the outputs is needed. 
+
+
+For the .xev:
+
+make clean cruiseController.xev 
+./cruiseController.xev 
+
+select signals with the appropriate colour and click "apply" when ready to check outputs 
 
