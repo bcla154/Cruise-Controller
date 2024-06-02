@@ -20,7 +20,7 @@ Inputs:
 - resume button (Resume) - pure signal
 - set button (Set) - pure signal
 - acceleation precentage of pedal (Accel) - float
-- brake precentage of pedal (bBake) - float
+- brake precentage of pedal (Brake) - float
 - car speed (Speed) - float
 - Button to accelerate in cruise control by 2.5km/hr (QuickAccel) - pure signal
 - Button to decelerate in cruise control by 2.5km/hr (QuickDecel) - pure signal
